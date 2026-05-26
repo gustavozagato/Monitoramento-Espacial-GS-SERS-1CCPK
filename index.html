@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Missão Espacial</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        
+        <div class="painel-exibicao">
+            <h2>Visão Geral dos Módulos</h2>
+            
+            <div class="cards-grid">
+                <div class="card">
+                    <h3>Bateria Principal</h3>
+                    <p class="valor" id="display-bateria">85%</p>
+                    <div class="barra-fundo">
+                        <div class="barra-nivel" id="barra-bateria" style="width: 85%;"></div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>Temperatura Externa</h3>
+                    <p class="valor" id="display-temperatura">22°C</p>
+                </div>
+                
+                <div class="card">
+                    <h3>Comunicação</h3>
+                    <p class="valor status-ok" id="display-status">ONLINE</p>
+                </div>
+            </div>
+            
+            <div class="caixa-alertas" id="caixa-alertas">
+                <p>> Sistema iniciado. Monitoramento ativo...</p>
+            </div>
+        </div>
+
+        <div class="painel-controle">
+            <h2>Controles de Simulação</h2>
+            
+            <div class="controle-grupo">
+                <label for="input-bateria" id="label-bateria">Nível de Bateria 85(%)</label>
+                <input type="range" id="input-bateria" min="0" max="100" value="85">
+            </div>
+            
+            <div class="controle-grupo">
+                <label for="input-temperatura" id="label-temperatura">Temperatura Externa 22(°C)</label>
+                <input type="range" id="input-temperatura" min="-150" max="150" value="22">
+            </div>
+
+            <div class="controle-grupo">
+                <label for="input-solar" id="label-solar">Geração Solar 0(%)</label>
+                <input type="range" id="input-solar" min="0" max="100" value="0">
+            </div>
+
+            <button id="btn-motor">Ligar Motores de Propulsão</button>
+            <script src="script.js"></script>
+        </div>
+
+    </div>
+
+</body>
+</html>
