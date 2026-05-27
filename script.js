@@ -21,11 +21,15 @@ let timerGeracao;
 let timerEsperaSolar;
 let timerMotor;
 
+let alertaBateriaAtivo = false;
+let alertaTempAlta = false;
+let alertaTempBaixa = false;
+let alertaEstavel = true;
+let alertaMotor = false;
+
 let motorLigado = false;
+let podeLigar = true;
 let sistemaEmPerigo = false;
-let energiaOK = true;
-let tempOK = true;
-let gerando = false;
 
 function analisarSistema() {
     let nivelBateria = parseInt(inputBateria.value);
@@ -45,49 +49,90 @@ function analisarSistema() {
         barraBateria.style.backgroundColor = "#da3633"; 
         displayStatus.textContent = "MODO ECONOMIA";
         displayStatus.style.color = "#d29922"; 
-        energiaOK = false;
         sistemaEmPerigo = true;
-        if (!gerando) {
+        if (!alertaBateriaAtivo) {
             registrarAlerta("ALERTA: Bateria crítica. Desativando módulos não essenciais.");
+            alertaBateriaAtivo = true;
         }
     } else {
         barraBateria.style.backgroundColor = "#2ea043"; 
         displayStatus.textContent = "ONLINE";
         displayStatus.style.color = "#2ea043";
-        energiaOK = true;
+        sistemaEmPerigo = false;
+        alertaBateriaAtivo = false;
     }
 
     // Temperatura
     if (tempExterna > 80) {
         displayTemperatura.style.color = "#da3633";
-        tempOK = false;
         sistemaEmPerigo = true;
-        registrarAlerta("PERIGO: Superaquecimento detectado no casco externo!");
+
+        if (!alertaTempAlta) {
+            registrarAlerta("PERIGO: Superaquecimento detetado no casco externo!");
+            alertaTempAlta = true;
+        }
+        alertaTempBaixa = false;
+
     } else if (tempExterna < -100) {
         displayTemperatura.style.color = "#58a6ff";
-        tempOK = false;
         sistemaEmPerigo = true;
-        registrarAlerta("AVISO: Temperatura extremamente baixa.");
+        if (!alertaTempBaixa) {
+            registrarAlerta("AVISO: Temperatura extremamente baixa.");
+            alertaTempBaixa = true;
+        }
+        alertaTempAlta = false;
+
     } else {
         displayTemperatura.style.color = "#c9d1d9";
-        tempOK = true;
+        sistemaEmPerigo = false;
+        alertaTempAlta = false;
+        alertaTempBaixa = false;
     }
 
-    if (energiaOK && tempOK && sistemaEmPerigo) {
+    /*if (!sistemaEmPerigo && alertaEstavel) {
         registrarAlerta("SISTEMA: Sistema estável.");
-        sistemaEmPerigo = false;
-    } 
+        alertaEstavel = false;
+    } else { alertaEstavel = true;}*/
+
+    const containerNave = document.querySelector('.container');
+
+    if (motorLigado && nivelBateria > 0) {
+        motor();
+        btnMotor.textContent = "Desligar Motores";
+        btnMotor.style.backgroundColor = "#d29922"; // Fica amarelo aviso
+        containerNave.classList.add('nave-tremendo'); // Liga o tremor
+        if (!alertaMotor) {
+            registrarAlerta("NAVEGAÇÃO: Motores acionados.");
+            alertaMotor = true;
+        }
+    } else {
+        clearInterval(timerMotor);
+        timerMotor = null;
+        alertaMotor = false;
+
+        btnMotor.textContent = "Ligar Motores de Propulsão";
+        btnMotor.style.backgroundColor = "#da3633"; // Volta ao vermelho botão normal
+        containerNave.classList.remove('nave-tremendo'); // Desliga o tremor
+        if (nivelBateria <= 0 && motorLigado) {
+            registrarAlerta("PERIGO: Sem bateria. Desligando motores...")
+            motorLigado = false;
+        }
+    }
 }
 
-// Alerta
 function registrarAlerta(mensagem) {
     const novoAlerta = document.createElement('p');
     novoAlerta.textContent = `> ${mensagem}`;
-    caixaAlertas.innerHTML = ""; 
+    
+    // ATENÇÃO: Removemos o innerHTML = ""
     caixaAlertas.appendChild(novoAlerta);
+
+    // Lógica do Terminal: Se houver mais de 4 alertas, removemos o mais antigo (o primeiro)
+    if (caixaAlertas.children.length > 4) {
+        caixaAlertas.removeChild(caixaAlertas.firstElementChild);
+    }
 }
 
-// 2. FUNÇÃO QUE GERENCIA O TEMPO E A MATEMÁTICA
 function iniciarEstabilizacao() {
     let tempAtual = parseInt(inputTemperatura.value);
 
@@ -101,7 +146,14 @@ function iniciarEstabilizacao() {
             
             timerEstabilizacao = setInterval(() => {
                 let temp = parseInt(inputTemperatura.value);
-                
+                let bateria = parseInt(inputBateria.value);
+
+                if (bateria <= 0) {
+                    clearInterval(timerEstabilizacao);
+                    registrarAlerta("FALHA CRÍTICA: Energia esgotada. O suporte térmico falhou!");
+                    return; 
+                }
+
                 if (temp > 80) {
                     temp--;
                 } else if (temp < -100) {
@@ -114,7 +166,6 @@ function iniciarEstabilizacao() {
                 
                 inputTemperatura.value = temp;
                 analisarSistema();
-
             }, 100);
         }, 3000);
     }
@@ -131,7 +182,6 @@ function geracaoSolar() {
 
     if (solarAtual > 0) {
         timerEsperaSolar = setTimeout(() => {
-            gerando = true;
             registrarAlerta("SISTEMA: Geração solar funcionando, carregando baterias...");
 
             timerGeracao = setInterval(() => {
@@ -149,20 +199,19 @@ function geracaoSolar() {
             }, tempRecarga);
         },3000);
     }
-    gerando = false;
 }
 
 function motor() {
-    clearInterval(timerMotor);
+    if (timerMotor) return;
 
     timerMotor = setInterval(() => {
-        let geracaoSolar = parseInt(inputSolar.value);
         if (motorLigado) {
             let bateria = parseInt(inputBateria.value);
             if (bateria > 0) {
                 bateria --;
             } else {
                 clearInterval(timerMotor);
+                timerMotor = null;
                 return;
             }
             inputBateria.value = bateria;
@@ -191,21 +240,11 @@ inputSolar.addEventListener('input', () => {
 
 
 btnMotor.addEventListener('click', () => {
-    motorLigado = !motorLigado; 
-    const containerNave = document.querySelector('.container');
-
-    if (motorLigado) {
-        motor();
-        btnMotor.textContent = "Desligar Motores";
-        btnMotor.style.backgroundColor = "#d29922"; // Fica amarelo aviso
-        containerNave.classList.add('nave-tremendo'); // Liga o tremor
-        registrarAlerta("NAVEGAÇÃO: Motores acionados. Consumo de energia crítico!");
-    } else {
-        btnMotor.textContent = "Ligar Motores de Propulsão";
-        btnMotor.style.backgroundColor = "#da3633"; // Volta ao vermelho botão normal
-        containerNave.classList.remove('nave-tremendo'); // Desliga o tremor
+    motorLigado = !motorLigado;
+    if (!motorLigado) {
         registrarAlerta("NAVEGAÇÃO: Motores desligados. Entrando em órbita estacionária.");
     }
+    analisarSistema();
     geracaoSolar();
 });
 
