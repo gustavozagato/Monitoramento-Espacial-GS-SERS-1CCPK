@@ -13,7 +13,8 @@ const inputTemperatura = document.getElementById('input-temperatura');
 const inputSolar = document.getElementById('input-solar');
 
 const btnMotor = document.getElementById('btn-motor');
-const btnFalha = document.getElementById('btn-falha');
+
+let tempBat = 1500;
 
 let timerEstabilizacao;
 let timerEspera;
@@ -27,6 +28,7 @@ let alertaTempBaixa = false;
 let alertaEstavel = true;
 let alertaMotor = false;
 
+let modoEconomia = false;
 let motorLigado = false;
 let podeLigar = true;
 let sistemaEmPerigo = false;
@@ -50,6 +52,11 @@ function analisarSistema() {
         displayStatus.textContent = "MODO ECONOMIA";
         displayStatus.style.color = "#d29922"; 
         sistemaEmPerigo = true;
+        if (!modoEconomia) {
+            modoEconomia = true;
+            tempBat = 3000;
+            reiniciarMotor();
+        }
         if (!alertaBateriaAtivo) {
             registrarAlerta("ALERTA: Bateria crítica. Desativando módulos não essenciais.");
             alertaBateriaAtivo = true;
@@ -60,6 +67,11 @@ function analisarSistema() {
         displayStatus.style.color = "#2ea043";
         sistemaEmPerigo = false;
         alertaBateriaAtivo = false;
+        if (modoEconomia) {
+            modoEconomia = false;
+            tempBat = 1500;
+            reiniciarMotor();
+        }
     }
 
     // Temperatura
@@ -68,7 +80,7 @@ function analisarSistema() {
         sistemaEmPerigo = true;
 
         if (!alertaTempAlta) {
-            registrarAlerta("PERIGO: Superaquecimento detetado no casco externo!");
+            registrarAlerta("ALERTA: Superaquecimento detetado no casco externo!");
             alertaTempAlta = true;
         }
         alertaTempBaixa = false;
@@ -77,7 +89,7 @@ function analisarSistema() {
         displayTemperatura.style.color = "#58a6ff";
         sistemaEmPerigo = true;
         if (!alertaTempBaixa) {
-            registrarAlerta("AVISO: Temperatura extremamente baixa.");
+            registrarAlerta("ALERTA: Temperatura extremamente baixa.");
             alertaTempBaixa = true;
         }
         alertaTempAlta = false;
@@ -89,33 +101,23 @@ function analisarSistema() {
         alertaTempBaixa = false;
     }
 
-    /*if (!sistemaEmPerigo && alertaEstavel) {
-        registrarAlerta("SISTEMA: Sistema estável.");
-        alertaEstavel = false;
-    } else { alertaEstavel = true;}*/
 
     const containerNave = document.querySelector('.container');
 
     if (motorLigado && nivelBateria > 0) {
-        motor();
         btnMotor.textContent = "Desligar Motores";
-        btnMotor.style.backgroundColor = "#d29922"; // Fica amarelo aviso
-        containerNave.classList.add('nave-tremendo'); // Liga o tremor
+        btnMotor.style.backgroundColor = "#d29922";
+        containerNave.classList.add('nave-tremendo');
         if (!alertaMotor) {
-            registrarAlerta("NAVEGAÇÃO: Motores acionados.");
+            registrarAlerta("SISTEMA: Motores acionados.");
             alertaMotor = true;
         }
     } else {
-        clearInterval(timerMotor);
-        timerMotor = null;
-        alertaMotor = false;
-
         btnMotor.textContent = "Ligar Motores de Propulsão";
-        btnMotor.style.backgroundColor = "#da3633"; // Volta ao vermelho botão normal
-        containerNave.classList.remove('nave-tremendo'); // Desliga o tremor
+        btnMotor.style.backgroundColor = "#da3633";
+        containerNave.classList.remove('nave-tremendo');
         if (nivelBateria <= 0 && motorLigado) {
-            registrarAlerta("PERIGO: Sem bateria. Desligando motores...")
-            motorLigado = false;
+            registrarAlerta("ALERTA: Sem bateria. Desligando motores...")
         }
     }
 }
@@ -124,10 +126,8 @@ function registrarAlerta(mensagem) {
     const novoAlerta = document.createElement('p');
     novoAlerta.textContent = `> ${mensagem}`;
     
-    // ATENÇÃO: Removemos o innerHTML = ""
     caixaAlertas.appendChild(novoAlerta);
 
-    // Lógica do Terminal: Se houver mais de 4 alertas, removemos o mais antigo (o primeiro)
     if (caixaAlertas.children.length > 4) {
         caixaAlertas.removeChild(caixaAlertas.firstElementChild);
     }
@@ -216,8 +216,20 @@ function motor() {
             }
             inputBateria.value = bateria;
             analisarSistema();
+            
+            if (bateria === 99) {
+                geracaoSolar();
+            }
         }
-    },1500)
+    },tempBat);
+}
+
+function reiniciarMotor() {
+    clearInterval(timerMotor);
+    timerMotor = null;
+    if (motorLigado) {
+        motor();
+    }
 }
 
 // ouvinte temperatura
@@ -238,23 +250,17 @@ inputSolar.addEventListener('input', () => {
     geracaoSolar();
 });
 
-
+// ouvinte motor
 btnMotor.addEventListener('click', () => {
     motorLigado = !motorLigado;
-    if (!motorLigado) {
-        registrarAlerta("NAVEGAÇÃO: Motores desligados. Entrando em órbita estacionária.");
+
+    if (motorLigado) {
+        motor();
+    } else {
+        registrarAlerta("SISTEMA: Motores desligados. Entrando em órbita estacionária.");
+        clearInterval(timerMotor);
+        timerMotor = null;
     }
     analisarSistema();
     geracaoSolar();
-});
-
-btnFalha.addEventListener('click', () => {
-    inputBateria.value = 5;
-    inputTemperatura.value = 120;
-    
-    analisarSistema(); 
-    iniciarEstabilizacao();
-    geracaoSolar();
-    
-    registrarAlerta("FALHA CRÍTICA SIMULADA PELO USUÁRIO.");
 });
