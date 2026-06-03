@@ -30,4 +30,4 @@ Existem dois métodos para ver o projeto:
 2. Não é necessária a instalação de nenhum servidor ou interpretador.
 3. Abra o ficheiro `index.html` em qualquer navegador.
 ### Nuvem
-Entre no link dentro do arquivo .txt ou clique em: https://github.com/gustavozagato/Monitoramento-Espacial-GS-SERS-1CCPK
+Entre no link dentro do arquivo .txt ou clique em: https://gustavozagato.github.io/Monitoramento-Espacial-GS-SERS-1CCPK/
