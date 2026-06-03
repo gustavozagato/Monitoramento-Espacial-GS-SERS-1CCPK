@@ -18,7 +18,8 @@ Desenvolvemos uma interface de simulação web baseada em um motor físico const
 ## Tecnologias e Engenharia Utilizadas
 A arquitetura foi desenvolvida 100% no lado do cliente (Client-side), sem dependências de frameworks externos:
 * **HTML5 & CSS3:** Interface dividida com `Flexbox`, garantindo a separação entre o painel de exibição (dados) e o painel de controlo (inputs do utilizador). Uso de `@keyframes` para feedback visual dinâmico (vibração dos motores).
-* **Vanilla JavaScript:** Manipulação de DOM e injeção de HTML dinâmico para o terminal de logs.
+* **Vanilla JavaScript:**
+  * Manipulação de DOM e injeção de HTML dinâmico para o terminal de logs.
   * Gestão de concorrência com **Máquinas de Estado (Flags)** (`estabilizando`, `motorLigado`, `sistemaEmPerigo`) para evitar conflitos na lógica de sobreposição.
   * Motor de simulação temporal utilizando processamento assíncrono (`setInterval` e `setTimeout`) para calcular a geração, o consumo e o decaimento térmico de forma simultânea e independente.
 
